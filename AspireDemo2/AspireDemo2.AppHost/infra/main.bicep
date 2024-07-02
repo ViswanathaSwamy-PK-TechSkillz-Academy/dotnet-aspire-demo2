@@ -18,7 +18,6 @@ var tags = {
 }
 
 module resources 'resources.bicep' = {
-  scope: rg
   name: 'resources'
   params: {
     location: location

@@ -17,5 +17,7 @@ D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd init
 dotnet run --project .\AspireDemo2.AppHost\AspireDemo2.AppHost.csproj --publisher manifest --output-path ../aspire-manifest.json
 
 D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd config set alpha.infraSynth on
- D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd infra synth
+D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd infra synth
+
+azd auth login --scope https://management.azure.com//.default
 ```
