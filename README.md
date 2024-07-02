@@ -11,5 +11,5 @@ Subscription level deployments
 ## Few Commands
 
 ```powershell
-D:\TSA\dotnet-aspire-demo1\AspireDemo1\AspireDemo1.AppHost> azd init
+D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd init
 ```
