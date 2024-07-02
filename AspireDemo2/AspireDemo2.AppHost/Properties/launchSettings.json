@@ -11,7 +11,8 @@
         "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21096",
         "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22259"
       },
-      "launchBrowser": true
+      "launchBrowser": true,
+      //"commandLineArgs": "--publisher manifest --output-path aspire-manifest.json"
     },
     "http": {
       "applicationUrl": "http://localhost:15290",
