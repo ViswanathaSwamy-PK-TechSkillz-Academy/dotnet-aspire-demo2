@@ -8,7 +8,6 @@ on:
     # Set this to the mainline branch you are using
     branches:
       - main
-      # - master
 
 # Set up permissions for deploying with secretless Azure federated credentials
 # https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
@@ -21,7 +20,7 @@ env:
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-  # AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+  AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
   AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
   AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
   AZD_ALPHA_ENABLE_RESOURCEGROUPDEPLOYMENTS: "true"
