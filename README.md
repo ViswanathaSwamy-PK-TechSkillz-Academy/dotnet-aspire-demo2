@@ -20,4 +20,8 @@ D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd config set alpha
 D:\TSA\dotnet-aspire-demo2\AspireDemo2\AspireDemo2.AppHost> azd infra synth
 
 azd auth login --scope https://management.azure.com//.default
+
+azd config set alpha.resourceGroupDeployments on
+
+azd up
 ```
