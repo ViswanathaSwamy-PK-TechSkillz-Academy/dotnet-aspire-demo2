@@ -37,12 +37,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+          
       - name: Install azd
         uses: Azure/setup-azd@v2
 
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
 
+      - name: Restore .NET workloads
+        run: dotnet workload restore
+        
       - name: Log in with Azure (Federated Credentials)
         if: ${{ env.AZURE_CLIENT_ID != '' }}
         run: |
