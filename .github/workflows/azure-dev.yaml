@@ -30,9 +30,9 @@ defaults:
     working-directory: ./AspireDemo2/AspireDemo2.AppHost
 
 jobs:
-  build:
+  deploy-to-dev:
     runs-on: ubuntu-latest
-    environment: 'Dev'
+    environment: "Dev"
 
     steps:
       - name: Checkout
@@ -41,8 +41,8 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
-          
+          dotnet-version: "8.0.x"
+
       - name: Install azd
         uses: Azure/setup-azd@v2
 
@@ -51,7 +51,48 @@ jobs:
 
       - name: Restore .NET workloads
         run: dotnet workload restore
-        
+
+      - name: Log in with Azure (Federated Credentials)
+        if: ${{ env.AZURE_CLIENT_ID != '' }}
+        run: |
+          azd auth login --client-id ${{ env.AZURE_CLIENT_ID }} --federated-credential-provider "github" --tenant-id ${{ env.AZURE_TENANT_ID }}
+        shell: pwsh
+
+      - name: Print Environment Variables
+        run: env
+
+      - name: Set environment variables
+        run: echo "AZURE_LOCATION=eastus" >> $GITHUB_ENV
+
+      - name: Provision Infrastructure
+        run: azd provision --no-prompt
+
+      - name: Deploy Application to Azure
+        run: azd deploy --no-prompt
+
+  deploy-to-test:
+    runs-on: ubuntu-latest
+    environment: "Test"
+    needs: deploy-to-dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      - name: Install .NET Aspire workload
+        run: dotnet workload install aspire
+
+      - name: Restore .NET workloads
+        run: dotnet workload restore
+
       - name: Log in with Azure (Federated Credentials)
         if: ${{ env.AZURE_CLIENT_ID != '' }}
         run: |
