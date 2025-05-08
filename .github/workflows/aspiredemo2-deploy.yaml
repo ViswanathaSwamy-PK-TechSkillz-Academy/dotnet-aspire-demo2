@@ -90,18 +90,3 @@ jobs:
 
       - name: Deploy Application
         run: azd deploy --no-prompt
-
-      # Add post-deployment verification
-      - name: Verify Deployment
-        run: |
-          echo "Verifying deployment to ${{ inputs.environment-name }} environment..."
-          # Get the deployment status
-          DEPLOYMENT_STATUS=$(azd status 2>&1)
-          echo "$DEPLOYMENT_STATUS"
-
-          # Check if any resources report issues
-          if echo "$DEPLOYMENT_STATUS" | grep -i "error\|failed"; then
-            echo "::warning::Some resources may have deployment issues."
-          else
-            echo "Deployment verification successful."
-          fi
