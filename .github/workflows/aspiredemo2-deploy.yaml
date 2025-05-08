@@ -91,12 +91,6 @@ jobs:
       - name: Deploy Application
         run: azd deploy --no-prompt
 
-      - name: Provision Infrastructure
-        run: azd provision --no-prompt
-
-      - name: Deploy Application to Azure
-        run: azd deploy --no-prompt
-
       # Add post-deployment verification
       - name: Verify Deployment
         run: |
