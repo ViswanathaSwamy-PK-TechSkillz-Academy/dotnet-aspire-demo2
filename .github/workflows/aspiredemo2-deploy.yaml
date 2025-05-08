@@ -69,6 +69,13 @@ jobs:
       - name: Print Environment Variables
         run: env
 
+      # Ensure environment name is set for azd
+      - name: Set up environment name for azd
+        run: |
+          # Use the environment name from GitHub Actions environment
+          echo "Setting up azd environment with name: ${{ env.AZURE_ENV_NAME || inputs.environment-name }}"
+          azd env new ${{ env.AZURE_ENV_NAME || inputs.environment-name }} --no-prompt
+
       # Use the provided Azure location or keep the one from environment variables
       - name: Set Azure location (if provided)
         if: ${{ inputs.azure-location != '' }}
