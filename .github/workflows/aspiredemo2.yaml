@@ -35,7 +35,7 @@ jobs:
     secrets: inherit
     with:
       project-name: AspireDemo2
-      solution-path: AspireDemo2/AspireDemo2.sln
+      solution-path: ./AspireDemo2.sln
 
   deploy-to-dev:
     runs-on: ubuntu-latest
