@@ -1,0 +1,101 @@
+name: Deploy .NET Aspire Application to Azure
+
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        description: "The name of the environment to deploy to (e.g., Dev, Test, Prod)"
+        required: true
+        type: string
+      dotnet-version:
+        description: "The version of .NET to use"
+        required: false
+        type: string
+        default: "8.0.x"
+      working-directory:
+        description: "The working directory for the deployment"
+        required: false
+        type: string
+        default: "./AspireDemo2/AspireDemo2.AppHost"
+      azure-location:
+        description: "Azure region for deployment (defaults to environment variable)"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment-name }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment-name }}
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      # Add caching for faster builds
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      - name: Install .NET Aspire workload
+        run: dotnet workload install aspire
+
+      - name: Restore .NET workloads
+        run: dotnet workload restore
+
+      - name: Log in with Azure (Federated Credentials)
+        if: ${{ env.AZURE_CLIENT_ID != '' }}
+        run: |
+          azd auth login --client-id ${{ env.AZURE_CLIENT_ID }} --federated-credential-provider "github" --tenant-id ${{ env.AZURE_TENANT_ID }}
+        shell: pwsh
+
+      - name: Print Environment Variables
+        run: env
+
+      # Use the provided Azure location or keep the one from environment variables
+      - name: Set Azure location (if provided)
+        if: ${{ inputs.azure-location != '' }}
+        run: echo "AZURE_LOCATION=${{ inputs.azure-location }}" >> $GITHUB_ENV
+
+      # Validate infrastructure changes before deployment (Azure best practice)
+      - name: Validate Infrastructure Changes
+        run: azd provision --preview --no-prompt
+        continue-on-error: true
+
+      - name: Provision Infrastructure
+        run: azd provision --no-prompt
+
+      - name: Deploy Application to Azure
+        run: azd deploy --no-prompt
+
+      # Add post-deployment verification
+      - name: Verify Deployment
+        run: |
+          echo "Verifying deployment to ${{ inputs.environment-name }} environment..."
+          # Get the deployment status
+          DEPLOYMENT_STATUS=$(azd status 2>&1)
+          echo "$DEPLOYMENT_STATUS"
+          
+          # Check if any resources report issues
+          if echo "$DEPLOYMENT_STATUS" | grep -i "error\|failed"; then
+            echo "::warning::Some resources may have deployment issues."
+          else
+            echo "Deployment verification successful."
+          fi
