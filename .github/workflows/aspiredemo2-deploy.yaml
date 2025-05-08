@@ -80,46 +80,34 @@ jobs:
       - name: Set environment variables
         run: echo "AZURE_LOCATION=eastus" >> $GITHUB_ENV
 
+      # Validate infrastructure changes before deployment (Azure best practice)
+      - name: Validate Infrastructure Changes
+        run: azd provision --preview --no-prompt
+        continue-on-error: true
+
       - name: Provision Infrastructure
         run: azd provision --no-prompt
 
       - name: Deploy Application
         run: azd deploy --no-prompt
 
-      # # Ensure environment name is set for azd
-      # - name: Set up environment name for azd
-      #   run: |
-      #     # Use the environment name from GitHub Actions environment
-      #     echo "Setting up azd environment with name: ${{ env.AZURE_ENV_NAME || inputs.environment-name }}"
-      #     azd env new ${{ env.AZURE_ENV_NAME || inputs.environment-name }} --no-prompt
+      - name: Provision Infrastructure
+        run: azd provision --no-prompt
 
-      # # Use the provided Azure location or keep the one from environment variables
-      # - name: Set Azure location (if provided)
-      #   if: ${{ inputs.azure-location != '' }}
-      #   run: echo "AZURE_LOCATION=${{ inputs.azure-location }}" >> $GITHUB_ENV
+      - name: Deploy Application to Azure
+        run: azd deploy --no-prompt
 
-      # # Validate infrastructure changes before deployment (Azure best practice)
-      # - name: Validate Infrastructure Changes
-      #   run: azd provision --preview --no-prompt
-      #   continue-on-error: true
+      # Add post-deployment verification
+      - name: Verify Deployment
+        run: |
+          echo "Verifying deployment to ${{ inputs.environment-name }} environment..."
+          # Get the deployment status
+          DEPLOYMENT_STATUS=$(azd status 2>&1)
+          echo "$DEPLOYMENT_STATUS"
 
-      # - name: Provision Infrastructure
-      #   run: azd provision --no-prompt
-
-      # - name: Deploy Application to Azure
-      #   run: azd deploy --no-prompt
-
-      # # Add post-deployment verification
-      # - name: Verify Deployment
-      #   run: |
-      #     echo "Verifying deployment to ${{ inputs.environment-name }} environment..."
-      #     # Get the deployment status
-      #     DEPLOYMENT_STATUS=$(azd status 2>&1)
-      #     echo "$DEPLOYMENT_STATUS"
-
-      #     # Check if any resources report issues
-      #     if echo "$DEPLOYMENT_STATUS" | grep -i "error\|failed"; then
-      #       echo "::warning::Some resources may have deployment issues."
-      #     else
-      #       echo "Deployment verification successful."
-      #     fi
+          # Check if any resources report issues
+          if echo "$DEPLOYMENT_STATUS" | grep -i "error\|failed"; then
+            echo "::warning::Some resources may have deployment issues."
+          else
+            echo "Deployment verification successful."
+          fi
