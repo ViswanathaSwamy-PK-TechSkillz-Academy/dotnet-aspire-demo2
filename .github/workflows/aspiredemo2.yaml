@@ -37,7 +37,8 @@ jobs:
       project-name: AspireDemo2
       solution-path: AspireDemo2/AspireDemo2.sln
 
-  deploy-dev:
+  # Deploy to East US region for Dev environment
+  deploy-dev-eastus:
     needs: build-and-test
     uses: ./.github/workflows/aspiredemo2-deploy.yaml
     secrets: inherit
@@ -45,9 +46,26 @@ jobs:
       environment-name: "Dev"
       working-directory: "./AspireDemo2/AspireDemo2.AppHost"
       dotnet-version: "8.0.x"
+      azure-location: "eastus"
+      resource-group: "rg-aspire-dev-001"
+      environment-suffix: "eastus"
 
+  # Deploy to Central US region for Dev environment
+  deploy-dev-centralus:
+    needs: build-and-test
+    uses: ./.github/workflows/aspiredemo2-deploy.yaml
+    secrets: inherit
+    with:
+      environment-name: "Dev"
+      working-directory: "./AspireDemo2/AspireDemo2.AppHost"
+      dotnet-version: "8.0.x"
+      azure-location: "centralus"
+      resource-group: "rg-aspire-dev-central"
+      environment-suffix: "centralus"
+
+  # Deploy to Test environment only after both Dev regions are successfully deployed
   deploy-test:
-    needs: deploy-dev
+    needs: [deploy-dev-eastus, deploy-dev-centralus]
     uses: ./.github/workflows/aspiredemo2-deploy.yaml
     secrets: inherit
     with:
