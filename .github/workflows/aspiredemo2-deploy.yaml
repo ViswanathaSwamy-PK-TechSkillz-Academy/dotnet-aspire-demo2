@@ -22,12 +22,33 @@ on:
         required: false
         type: string
         default: ""
+      resource-group:
+        description: "Resource group name for deployment (defaults to environment variable)"
+        required: false
+        type: string
+        default: ""
+      environment-suffix:
+        description: "Optional suffix to append to the environment name for region-specific deployments"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   deploy:
-    name: Deploy to ${{ inputs.environment-name }}
+    name: Deploy to ${{ inputs.environment-name }}${{ inputs.environment-suffix != '' && format(' ({0})', inputs.environment-suffix) || '' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment-name }}
+
+    env:
+      AZD_INITIAL_ENVIRONMENT_CONFIG: ${{ secrets.AZD_INITIAL_ENVIRONMENT_CONFIG }}
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_ENV_NAME: ${{ inputs.environment-suffix != '' && format('{0}-{1}', vars.AZURE_ENV_NAME, inputs.environment-suffix) || vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ inputs.azure-location != '' && inputs.azure-location || vars.AZURE_LOCATION }}
+      AZURE_RESOURCE_GROUP: ${{ inputs.resource-group != '' && inputs.resource-group || vars.AZURE_RESOURCE_GROUP }}
+      AZD_ALPHA_ENABLE_RESOURCEGROUPDEPLOYMENTS: ${{ vars.RESOURCEGROUPDEPLOYMENTS }}
 
     defaults:
       run:
@@ -57,9 +78,6 @@ jobs:
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
 
-      - name: Restore .NET workloads
-        run: dotnet workload restore
-
       - name: Log in with Azure (Federated Credentials)
         if: ${{ env.AZURE_CLIENT_ID != '' }}
         run: |
@@ -69,10 +87,20 @@ jobs:
       - name: Print Environment Variables
         run: env
 
-      # Use the provided Azure location or keep the one from environment variables
-      - name: Set Azure location (if provided)
-        if: ${{ inputs.azure-location != '' }}
-        run: echo "AZURE_LOCATION=${{ inputs.azure-location }}" >> $GITHUB_ENV
+      # Ensure environment name is set for azd with region-specific suffix
+      - name: Set up environment name for azd
+        run: |
+          # Use the environment name with optional region suffix
+          echo "Setting up azd environment with name: ${{ env.AZURE_ENV_NAME }}"
+          azd env new ${{ env.AZURE_ENV_NAME }} --no-prompt
+          
+          # Set the location explicitly based on the input parameter or environment variable
+          echo "Setting Azure location to: ${{ env.AZURE_LOCATION }}"
+          azd env set AZURE_LOCATION ${{ env.AZURE_LOCATION }}
+          
+          # Set the resource group name explicitly
+          echo "Setting resource group to: ${{ env.AZURE_RESOURCE_GROUP }}"
+          azd env set AZURE_RESOURCE_GROUP ${{ env.AZURE_RESOURCE_GROUP }}
 
       # Validate infrastructure changes before deployment (Azure best practice)
       - name: Validate Infrastructure Changes
@@ -82,20 +110,5 @@ jobs:
       - name: Provision Infrastructure
         run: azd provision --no-prompt
 
-      - name: Deploy Application to Azure
+      - name: Deploy Application
         run: azd deploy --no-prompt
-
-      # Add post-deployment verification
-      - name: Verify Deployment
-        run: |
-          echo "Verifying deployment to ${{ inputs.environment-name }} environment..."
-          # Get the deployment status
-          DEPLOYMENT_STATUS=$(azd status 2>&1)
-          echo "$DEPLOYMENT_STATUS"
-          
-          # Check if any resources report issues
-          if echo "$DEPLOYMENT_STATUS" | grep -i "error\|failed"; then
-            echo "::warning::Some resources may have deployment issues."
-          else
-            echo "Deployment verification successful."
-          fi
