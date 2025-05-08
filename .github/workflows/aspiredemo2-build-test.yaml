@@ -36,9 +36,6 @@ jobs:
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
 
-      # - name: Restore .NET workloads
-      #   run: dotnet workload restore
-
       - name: Restore NuGet Packages
         run: dotnet restore ${{ inputs.solution-path }}
 
