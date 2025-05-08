@@ -78,28 +78,13 @@ jobs:
         run: env
 
       - name: Set environment variables
-        run: echo "AZURE_LOCATION=eastus2" >> $GITHUB_ENV
+        run: echo "AZURE_LOCATION=eastus" >> $GITHUB_ENV
 
       - name: Provision Infrastructure
         run: azd provision --no-prompt
 
       - name: Deploy Application
         run: azd deploy --no-prompt
-
-      # - name: Install .NET Aspire workload
-      #   run: dotnet workload install aspire
-
-      # - name: Restore .NET workloads
-      #   run: dotnet workload restore
-
-      # - name: Log in with Azure (Federated Credentials)
-      #   if: ${{ env.AZURE_CLIENT_ID != '' }}
-      #   run: |
-      #     azd auth login --client-id ${{ env.AZURE_CLIENT_ID }} --federated-credential-provider "github" --tenant-id ${{ env.AZURE_TENANT_ID }}
-      #   shell: pwsh
-
-      # - name: Print Environment Variables
-      #   run: env
 
       # # Ensure environment name is set for azd
       # - name: Set up environment name for azd
