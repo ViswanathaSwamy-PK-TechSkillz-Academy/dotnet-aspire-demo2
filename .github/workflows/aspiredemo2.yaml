@@ -4,13 +4,9 @@
 on:
   workflow_dispatch:
   push:
-    # Run when commits are pushed to mainline branch (main or master)
-    # Set this to the mainline branch you are using
     branches:
       - main
 
-# Set up permissions for deploying with secretless Azure federated credentials
-# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
 permissions:
   id-token: write
   contents: read
@@ -21,8 +17,6 @@ env:
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
   AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-  AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
   AZD_ALPHA_ENABLE_RESOURCEGROUPDEPLOYMENTS: "true"
 
 defaults:
@@ -37,38 +31,18 @@ jobs:
       project-name: AspireDemo2
       solution-path: AspireDemo2/AspireDemo2.sln
 
-  # Deploy to East US region for Dev environment
-  deploy-dev-eastus:
+  deploy:
+    strategy:
+      matrix:
+        environment: [Dev, Test]
+        region: [eastus, centralus] # Multi-region deployment support
+      fail-fast: false # Continue with other regions/environments if one fails
+    uses: ./.github/workflows/aspiredemo2-deploy.yaml
     needs: build-and-test
-    uses: ./.github/workflows/aspiredemo2-deploy.yaml
     secrets: inherit
     with:
-      environment-name: "Dev"
+      environment-name: ${{ matrix.environment }}
       working-directory: "./AspireDemo2/AspireDemo2.AppHost"
       dotnet-version: "8.0.x"
-      azure-location: "eastus"
-      resource-group: "rg-aspire-dev-001"
-      environment-suffix: "eastus"
-
-  # Deploy to Central US region for Dev environment
-  deploy-dev-centralus:
-    needs: build-and-test
-    uses: ./.github/workflows/aspiredemo2-deploy.yaml
-    secrets: inherit
-    with:
-      environment-name: "Dev"
-      working-directory: "./AspireDemo2/AspireDemo2.AppHost"
-      dotnet-version: "8.0.x"
-      azure-location: "centralus"
-      resource-group: "rg-aspire-dev-central"
-      environment-suffix: "centralus"
-
-  # Deploy to Test environment only after both Dev regions are successfully deployed
-  deploy-test:
-    needs: [deploy-dev-eastus, deploy-dev-centralus]
-    uses: ./.github/workflows/aspiredemo2-deploy.yaml
-    secrets: inherit
-    with:
-      environment-name: "Test"
-      working-directory: "./AspireDemo2/AspireDemo2.AppHost"
-      dotnet-version: "8.0.x"
+      azure-location: ${{ matrix.region }}
+      resource-group: rg-aspire-${{ matrix.environment }}-${{ matrix.region }}
